@@ -10,6 +10,7 @@ classdef srtplayer
     properties
         srtpath (1,:) char
         T table
+        T2 table % more human friendly
         Width  (1,1) double 
         MarginBottom (1,1) double = 50
         BackgroundColor (1,:) char {mustBeMember(BackgroundColor,{'black','white'})} = 'black';
@@ -62,6 +63,7 @@ classdef srtplayer
             from = cell(N,1);
             to = cell(N,1);
             str = cell(N,1);
+            cha = cell(N,1);
             
             ind1 = find(ismatched(s, "^[" + char(65279) + "]?1$"),1,'first');
 
@@ -92,7 +94,7 @@ classdef srtplayer
                
                 
                 str{i} = s(ind + 2:find(s(ind:end) == "",1,'first') + ind - 2);
-
+                
             end
             close(f);
             
@@ -105,7 +107,34 @@ classdef srtplayer
 
             obj.Width = ss(3);
             
+                    from = obj.T.from;
             
+            subtitles = obj.T.subtitle;
+            
+            nlines = cellfun(@(x) numel(x), subtitles);
+            
+            n = sum(nlines);
+            
+            
+            Subtitles = vertcat(subtitles{:});
+            
+            
+            h = floor(hours(from));
+            
+            m = floor(minutes(from - hours(h)));
+            
+            s = floor(seconds(from - hours(h) - minutes(m)));
+            
+            C = cell(length(from),1);
+            for i = 1:length(from)
+                C{i} = [sprintf("%d:%02d:%02d",h(i),m(i),s(i));...
+                    strings(nlines(i) -1, 1)];
+
+            end
+            
+            Time = vertcat(C{:});
+            
+            obj.T2 = table(Time, Subtitles);
             
         end
         
@@ -378,37 +407,8 @@ classdef srtplayer
             fig = uifigure('Name', name);
                         
             uit = uitable(fig,'Position',[0, 0, fig.Position(3), fig.Position(4)]);
-            
-            from = obj.T.from;
-            
-            subtitles = obj.T.subtitle;
-            
-            nlines = cellfun(@(x) numel(x), subtitles);
-            
-            n = sum(nlines);
-            
-            
-            Subtitles = vertcat(subtitles{:});
-            
-            
-            h = floor(hours(from));
-            
-            m = floor(minutes(from - hours(h)));
-            
-            s = floor(seconds(from - hours(h) - minutes(m)));
-            
-            C = cell(length(from),1);
-            for i = 1:length(from)
-                C{i} = [sprintf("%d:%02d:%02d",h(i),m(i),s(i));...
-                    strings(nlines(i) -1, 1)];
 
-            end
-            
-            Time = vertcat(C{:});
-            
-            Tdata = table(Time, Subtitles);
-            
-            uit.Data = Tdata;
+            uit.Data = obj.T2;
             uit.ColumnWidth = {fig.Position(3)*0.10,fig.Position(3)*0.90};
 
         end
